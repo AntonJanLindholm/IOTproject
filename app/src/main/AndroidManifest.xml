@@ -10,11 +10,19 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.IOTproject">
         <activity
+            android:name=".Trashcan"
+            android:exported="false" />
+        <activity
+            android:name=".Temp"
+            android:exported="false" />
+        <activity
+            android:name=".Lamp"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
