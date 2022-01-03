@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">IOTproject</string>
     <string name="my_home">  My Home</string>
+
+    <string name="set_temperature_at_home">Set temperature at home</string>
     <string name="todo">TODO</string>
 </resources>
