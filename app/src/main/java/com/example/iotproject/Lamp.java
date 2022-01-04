@@ -4,10 +4,19 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.app.TimePickerDialog;
+import android.text.Editable;
 import android.text.InputType;
+import android.text.TextWatcher;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import org.eclipse.paho.android.service.MqttAndroidClient;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+
 import java.util.Calendar;
 
 public class Lamp extends AppCompatActivity {
@@ -18,20 +27,55 @@ public class Lamp extends AppCompatActivity {
     TextView textView;
     TimePickerDialog timePickerDialog;
 
-
+    private static final String TOPIC = "iotlab/masterg2/sensors/Lamp";
+    private MqttAndroidClient client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        client = MainActivity.getClient();
+
         setContentView(R.layout.activity_lamp);
 
         textView = (TextView)findViewById(R.id.Timeview);
 
-        Timevalue_ =(EditText) findViewById(R.id.Savetime);
         Luxvalue_ =(EditText) findViewById(R.id.Lux_value);
+        Luxvalue_.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+                try {
+                    MqttMessage msg = new MqttMessage();
+
+                    if(editable.length() == 0) {
+                        msg.setPayload(("-1").getBytes());
+                    }
+                    else {
+                        msg.setPayload(editable.toString().getBytes());
+                    }
+
+                    //send new lux limit to rpi
+                    client.publish(TOPIC, msg);
+                } catch (MqttException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
 
         button = (Button) findViewById(R.id.Buttonsave);
 
+        Timevalue_ =(EditText) findViewById(R.id.Savetime);
         Timevalue_.setInputType(InputType.TYPE_NULL);
         Timevalue_.setOnClickListener(v -> {
 
