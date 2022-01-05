@@ -13,6 +13,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
+import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -28,13 +30,10 @@ public class Lamp extends AppCompatActivity {
     TimePickerDialog timePickerDialog;
 
     private static final String TOPIC = "iotlab/masterg2/sensors/Lamp";
-    private MqttAndroidClient client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        client = MainActivity.getClient();
 
         setContentView(R.layout.activity_lamp);
 
@@ -54,22 +53,26 @@ public class Lamp extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable editable) {
-
-                try {
-                    MqttMessage msg = new MqttMessage();
-
-                    if(editable.length() == 0) {
-                        msg.setPayload(("-1").getBytes());
-                    }
-                    else {
-                        msg.setPayload(editable.toString().getBytes());
-                    }
-
-                    //send new lux limit to rpi
-                    client.publish(TOPIC, msg);
-                } catch (MqttException e) {
-                    e.printStackTrace();
+                String data = "";
+                if (editable.length() == 0) {
+                    data = "-1";
+                } else {
+                    data = editable.toString();
                 }
+
+                //send new lux limit to rpi
+                IMqttToken publishToken = MainActivity.publish(TOPIC, data);
+                publishToken.setActionCallback(new IMqttActionListener() {
+                    @Override
+                    public void onSuccess(IMqttToken asyncActionToken) {
+                        System.out.println("Successfully published to " + TOPIC);
+                    }
+
+                    @Override
+                    public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                        System.out.println("Failed to publish to " + TOPIC);
+                    }
+                });
             }
         });
 

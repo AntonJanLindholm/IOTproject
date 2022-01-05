@@ -11,9 +11,12 @@ import android.view.View;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.Serializable;
 
@@ -26,11 +29,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private CardView Trashcan_, Temp_, Lamp_;
 
-    public static MqttAndroidClient getClient() {
-        return INSTANCE.client;
-    }
-
-    @Override
+        @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -46,6 +45,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Trashcan_.setOnClickListener((View.OnClickListener) this);
 
         connect();
+        client.setCallback(new MqttCallback() {
+                        @Override
+            public void connectionLost(Throwable cause) {
+                System.out.println("Connection lost");
+            }
+
+            @Override
+            public void messageArrived(String topic, MqttMessage message) throws Exception {
+
+            }
+
+            @Override
+            public void deliveryComplete(IMqttDeliveryToken token) {
+                try {
+                    String message = token.getMessage().getPayload().toString();
+                    System.out.println(message);
+                } catch (MqttException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
         }
 
         @Override
@@ -83,5 +103,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } catch (MqttException e) {
             e.printStackTrace();
         }
+    }
+
+    public static IMqttToken publish(String topic, String data) {
+        try {
+            MqttMessage msg = new MqttMessage();
+            msg.setPayload(data.getBytes());
+            msg.setQos(1);
+            msg.setRetained(false);
+
+            return INSTANCE.client.publish(topic, msg);
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }
