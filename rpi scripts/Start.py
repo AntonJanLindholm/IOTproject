@@ -29,14 +29,20 @@ sensor_Lux = adafruit_tsl2591.TSL2591(i2c)		    # High range lux sensor
 ############### MQTT section ##################
 
 lamp_topic = "iotlab/masterg2/sensors/Lamp"
-lux_limit = int(-1)
+trash_topic = "iotlab/masterg2/sensors/trash"
 
+lux_limit = -1
+# since we only have one prox sensors we can only sense the top most one
+# in a real world scenario, we would have sensors evenly spread out
+# along the height of the garbage can (or have longer range sensors)
+trash_limit_set = 0
 
 # when connecting to mqtt do this;
 def on_connect(client, userdata, flags, rc):
     if rc==0:
         print("Connection established. Code: "+str(rc))
         client.subscribe(lamp_topic)
+        client.subscribe(trash_topic)
     else:
         print("Connection failed. Code: " + str(rc))
 		
@@ -55,17 +61,19 @@ def on_log(client, userdata, level, buf):		# Message is in buf
 # Actuators
 def on_message(client, userdata, message):
     msg_string = str(message.payload.decode("utf-8"))
-    if str(message.topic) == lamp_topic:
-        global lux_limit 
+    topic_string = str(message.topic)
+    if topic_string == lamp_topic:
+        global lux_limit # global needed so on_message assigns to correct var
+                         # if we don't do it lux_limit is considered a local var
         lux_limit = int(msg_string)
         print("lux limit set to " + str(lux_limit))
-    # if str(message.payload.decode("utf-8")) == "On":
-    #     Cmd = "tdtool --on 2"
-    #     stream = os.popen(Cmd)
-    # elif str(message.payload.decode("utf-8")) == "Off":
-    #     Cmd = "tdtool --off 2"
-    #     stream = os.popen(Cmd)
-    return msg_string
+    elif topic_string == trash_topic:
+        global trash_limit_set
+        trash_limit_set = 1
+        # in a real world scenario, the limit wouldnt be binary
+        # users would set a 0f-1f || 0-100 value
+        # which could be compared to the current value of trash proximity
+    return topic_string + " " +  msg_string
 
 # Connect functions for MQTT
 client = mqtt.Client()
@@ -142,11 +150,20 @@ def toggleLamp():
         return 0
     return state
 
+def checkTrashFill():
+    proximity = int(get_proximity())
+    if proximity > 20000: # hard coded for presentation for previously stated reasons
+        client.publish("iotlab/masterg2/sensors/trashfull", str(proximity))
+        global trash_limit_set
+        trash_limit_set = 0
+
 # Loop that publishes message
 while True:
     publishAll()
     time.sleep(4.0)	# Set delay
     if(lux_limit > -1):
         lamp_state = toggleLamp() #this assignment will be removed when nics method is added
+    if(trash_limit_set == 1):
+        checkTrashFill()
 
 	

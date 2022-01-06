@@ -53,7 +53,7 @@ public class Lamp extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable editable) {
-                String data = "";
+                String data;
                 if (editable.length() == 0) {
                     data = "-1";
                 } else {
@@ -61,18 +61,7 @@ public class Lamp extends AppCompatActivity {
                 }
 
                 //send new lux limit to rpi
-                IMqttToken publishToken = MainActivity.publish(TOPIC, data);
-                publishToken.setActionCallback(new IMqttActionListener() {
-                    @Override
-                    public void onSuccess(IMqttToken asyncActionToken) {
-                        System.out.println("Successfully published to " + TOPIC);
-                    }
-
-                    @Override
-                    public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                        System.out.println("Failed to publish to " + TOPIC);
-                    }
-                });
+                MainActivity.publish(TOPIC, data);
             }
         });
 
